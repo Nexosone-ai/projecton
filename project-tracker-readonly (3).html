@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프로젝트 진행 대시보드</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  .ledger-root {
+    --bg-base: #12161C;
+    --bg-card: #1B222B;
+    --bg-card-hover: #212933;
+    --ink: #EDE7D9;
+    --ink-muted: #8D9199;
+    --seal-gold: #C7A24C;
+    --ok-green: #5B9279;
+    --warn-amber: #D18B3D;
+    --alert-rust: #B0503A;
+    --hairline: #2B3440;
+
+    background: var(--bg-base);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    padding: 28px 20px 60px;
+    border-radius: 12px;
+    max-width: 880px;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+  .ledger-root * { box-sizing: border-box; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .display { font-family: 'Spectral', serif; }
+
+  /* Header */
+  .lr-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .lr-header .brand-eyebrow {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--seal-gold);
+    margin: 0 0 6px;
+  }
+  .lr-header h1 {
+    font-family: 'Spectral', serif;
+    font-weight: 600;
+    font-size: 26px;
+    margin: 0;
+    color: var(--ink);
+  }
+  .lr-header .sub {
+    color: var(--ink-muted);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .lr-total {
+    text-align: right;
+  }
+  .lr-total .label {
+    font-size: 11px;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .lr-total .value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--seal-gold);
+  }
+
+  /* Today checklist */
+  .today-box {
+    background: var(--bg-card);
+    border-left: 3px solid var(--alert-rust);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 26px;
+  }
+  .today-box h2 {
+    font-family: 'Spectral', serif;
+    font-size: 16px;
+    margin: 0 0 10px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .today-box h2 .count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    background: var(--alert-rust);
+    color: var(--bg-base);
+    padding: 1px 7px;
+    border-radius: 10px;
+  }
+  .today-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--hairline);
+    font-size: 13.5px;
+  }
+  .today-item:last-child { border-bottom: none; }
+  .today-item input[type=checkbox] {
+    margin-top: 2px;
+    accent-color: var(--ok-green);
+    width: 15px; height: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .today-item.done label { color: var(--ink-muted); text-decoration: line-through; }
+  .today-item label { cursor: pointer; }
+  .today-item .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--seal-gold);
+    margin-right: 4px;
+  }
+  .today-empty { color: var(--ink-muted); font-size: 13px; }
+
+  /* Ledger rows */
+  .lr-section-title {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 30px 0 10px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    transition: background 0.15s ease;
+  }
+  .card:hover { background: var(--bg-card-hover); }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .card-id {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink-muted);
+    font-size: 12px;
+    margin-right: 8px;
+  }
+  .card-title {
+    font-family: 'Spectral', serif;
+    font-size: 16.5px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .card-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--seal-gold);
+    white-space: nowrap;
+  }
+  .seal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+    padding: 3px 12px;
+    font-family: 'Spectral', serif;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    margin-top: 6px;
+  }
+  .seal.ok { color: var(--ok-green); }
+  .seal.warn { color: var(--warn-amber); }
+  .seal.alert { color: var(--alert-rust); }
+  .seal.neutral { color: var(--ink-muted); }
+
+  .card-details {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    font-size: 13.5px;
+    color: var(--ink-muted);
+    line-height: 1.6;
+  }
+  .card-details li {
+    padding-left: 14px;
+    position: relative;
+  }
+  .card-details li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--hairline);
+  }
+  .card-memo {
+    margin-top: 12px;
+  }
+  .card-memo textarea {
+    width: 100%;
+    background: var(--bg-base);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 36px;
+  }
+  .card-memo textarea::placeholder { color: var(--ink-muted); }
+  .memo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .memo-update-btn {
+    background: var(--seal-gold);
+    color: var(--bg-base);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 6px 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .memo-update-btn:hover { background: #d8b563; }
+  .memo-update-btn:active { transform: translateY(1px); }
+  .card-memo .saved-flag {
+    font-size: 11px;
+    color: var(--ok-green);
+    height: 14px;
+  }
+
+  .footer-note {
+    margin-top: 30px;
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    text-align: center;
+    border-top: 1px solid var(--hairline);
+    padding-top: 14px;
+  }
+
+  /* Mobile optimization */
+  @media (max-width: 520px) {
+    .ledger-root {
+      padding: 18px 14px 44px;
+      border-radius: 0;
+      max-width: 100%;
+    }
+    .lr-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+    .lr-header h1 { font-size: 21px; }
+    .lr-header .sub { font-size: 12px; }
+    .lr-total { text-align: left; width: 100%; }
+    .lr-total .value { font-size: 21px; }
+    .today-box { padding: 14px 14px; margin-bottom: 20px; }
+    .today-box h2 { font-size: 14.5px; }
+    .today-item { font-size: 13px; padding: 8px 0; }
+    .today-item input[type=checkbox] {
+      width: 19px; height: 19px;
+    }
+    .lr-section-title { margin: 22px 0 8px; }
+    .card { padding: 14px 14px; }
+    .card-top {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .card-title { font-size: 15.5px; }
+    .card-amount { font-size: 14px; }
+    .card-details { font-size: 13px; }
+    .seal { font-size: 10.5px; padding: 3px 10px; }
+    .card-memo textarea { font-size: 14px; min-height: 44px; }
+    .memo-update-btn { padding: 9px 16px; font-size: 13px; }
+  }
+  @media (max-width: 360px) {
+    .lr-header h1 { font-size: 19px; }
+    .lr-total .value { font-size: 18px; }
+  }
+
+  body { margin: 0; background: #12161C; }
+</style>
+</head>
+<body>
+<div class="ledger-root" id="ledgerRoot">
+  <div class="lr-header">
+    <div>
+      <p class="brand-eyebrow">Blockchain × AI Development — 공동경영 원장</p>
+      <h1>프로젝트 진행 대시보드</h1>
+      <p class="sub">대표 김동혁 · 최재율 &nbsp;|&nbsp; <span class="mono" id="todayDate"></span></p>
+    </div>
+    <div class="lr-total">
+      <div class="label">확정 계약 기준 파이프라인</div>
+      <div class="value" id="totalValue">-</div>
+    </div>
+  </div>
+
+  <div class="today-box">
+    <h2>오늘의 체크리스트 <span class="count" id="todayCount">0</span></h2>
+    <div id="todayList"></div>
+  </div>
+
+  <div class="lr-section-title">전체 프로젝트 원장</div>
+  <div id="cardList"></div>
+
+  <div class="footer-note">체크 항목과 메모는 Claude 안에서 열었을 때 파트너와 공유되며, 다운로드한 파일을 브라우저에서 직접 열면 이 기기에만 저장됩니다</div>
+</div>
+
+<script>
+(function(){
+  function initLedger(){
+  // window.storage는 Claude 아티팩트 환경에서만 제공됨.
+  // 원격 저장이 실패하거나(서버 오류 등) window.storage 자체가 없는 환경(파일을 다운로드해 브라우저에서 직접 열람)에서는
+  // 이 기기의 localStorage로 자동 전환하여 데이터 유실 없이 계속 동작하도록 함.
+  let remoteFailed = false;
+  const remote = (typeof window.storage !== 'undefined') ? window.storage : null;
+  const local = {
+    async get(key, shared){
+      try {
+        const v = localStorage.getItem((shared ? 'shared:' : 'local:') + key);
+        return v !== null ? { key, value: v, shared } : null;
+      } catch(e) { return null; }
+    },
+    async set(key, value, shared){
+      try {
+        localStorage.setItem((shared ? 'shared:' : 'local:') + key, value);
+        return { key, value, shared };
+      } catch(e) { return null; }
+    }
+  };
+  const storage = {
+    async get(key, shared){
+      if (remote && !remoteFailed) {
+        try { return await remote.get(key, shared); }
+        catch(e) {
+          // 키가 없어서 실패한 것일 수도, 원격 저장소 자체 오류일 수도 있음.
+          // 이전에 로컬로 폴백 저장된 값이 있으면 그것을 우선 사용.
+          const localResult = await local.get(key, shared);
+          if (localResult) { remoteFailed = true; return localResult; }
+          return null;
+        }
+      }
+      return local.get(key, shared);
+    },
+    async set(key, value, shared){
+      if (remote && !remoteFailed) {
+        try {
+          const r = await remote.set(key, value, shared);
+          if (r) return r;
+        } catch(e) {
+          remoteFailed = true;
+          console.warn('공유 저장소 오류로 이 기기의 로컬 저장으로 전환합니다.');
+        }
+      }
+      return local.set(key, value, shared);
+    }
+  };
+  const projects = [
+    { id: '1', title: '선불카드 사업', amount: 850000000,
+      status: { label: '진행중', tone: 'ok' },
+      details: ['8.5억원 규모 선불카드 사업 진행중'],
+      today: null },
+    { id: '2', title: 'ZETAPAY', amount: 50000000,
+      status: { label: '작업 착수 필요', tone: 'warn' },
+      details: [
+        '전몽균 대표 1천만원 입금완료 (총 계약 5천만원)',
+        '미수금 500만원',
+        '거래수수료·출금수수료: 1,000원당 300원 차감'
+      ],
+      today: '작업 착수 진행 여부 확인' },
+    { id: '3', title: '개발비 프로젝트 (홍조사)', amount: 200000000,
+      status: { label: '계약 대기', tone: 'neutral' },
+      details: [
+        '개발비 2억원 견적 제공 완료',
+        '8월 말~9월 초 개발계약 진행 예정'
+      ],
+      today: null },
+    { id: '4', title: '리얼썬 (문상욱 대표)', amount: 140000000,
+      status: { label: '조건 확정', tone: 'ok' },
+      details: [
+        '플랫폼 오픈 후 소규모 진행 요청받음',
+        'NFT 발행용 서류 제공 완료',
+        '개발비 1억 4천만원으로 확정',
+        '우리 측 지분 7.5% 확보'
+      ],
+      today: null },
+    { id: '5', title: '블로그 자동화 솔루션', amount: 10000000,
+      status: { label: '금일 체크 필요', tone: 'warn' },
+      details: [
+        '개발계약 200만원 + 800만원 (총 1,000만원)',
+        '사업자 이용요금: A형 59,000원 / B형 99,000원',
+        'CANABIS 잠재 사업자 최대 1만개 대상 확장 가능',
+        '예상 매출(잠재 사업자 1만개 전량 기준): A형 월 5억 9,000만원 / B형 월 9억 9,000만원 — 실제는 A/B 혼합 가입률에 따라 달라지는 추정치'
+      ],
+      today: '입금·계약 진행상황 체크' },
+    { id: '6', title: '넥서스원 선불카드 판매', amount: null,
+      status: { label: '영업 진행중', tone: 'warn' },
+      details: [
+        '트립패스 판매등록 서류 제출, 추가서류 요청됨',
+        '이형운 회장 영업 담당',
+        '구조: 영업 성사 시 입금 → 차액 지급',
+        '카드 1장 판매 15,000원 / 지급비용 12,000원 → 장당 수익 3,000원',
+        '어제 트립패스에 회사서류 전송'
+      ],
+      today: '금일 업무 협의 미팅 (동대구)' },
+    { id: '8', title: 'AJ 트레저리 (홈페이지)', amount: 3000000,
+      status: { label: '입금 대기', tone: 'alert' },
+      details: ['300만원 입금 예정, 아직 미입금'],
+      today: '입금 여부 체크' },
+    { id: '9', title: 'AJG 앱', amount: 2000000,
+      status: { label: '입금 대기', tone: 'alert' },
+      details: ['200만원 입금 예정, 아직 미입금'],
+      today: '입금 여부 체크' },
+    { id: '10', title: 'XBT 프로젝트', amount: null,
+      status: { label: '견적 제공완료', tone: 'ok' },
+      details: ['거래소 대상 견적 산출 및 제공 완료'],
+      today: null },
+    { id: '11', title: '로직온파이어 → 넥서스원 이관', amount: null,
+      status: { label: '이관작업 필요', tone: 'neutral' },
+      details: ['개인회사(로직온파이어) 프로젝트를 넥서스원으로 이관하는 작업 필요'],
+      today: '이관 절차 확인·진행' },
+    { id: '12', title: '인사동 부동산 토큰 PF 플랫폼 (베리체인)', amount: null, amountUSD: 280000,
+      status: { label: '견적 발송', tone: 'warn' },
+      details: [
+        'INSADONG Real Estate Tokenized PF Project · 서비스 제공: 태국 베리체인 법인',
+        '견적일 2026-08-10 / 유효기간 발행일로부터 10일 (8/20 마감)',
+        '구성: 태국 BOI 법인·인프라 $70,000 · 법률·규제 자문 $50,000 · LP Pool 개발 $90,000 · Wallet 개발 $70,000',
+        '결제조건: 계약금 50%($140,000) · 중도금 30%($84,000) · 완료 시 20%($56,000)',
+        '예상 개발기간: 계약일로부터 약 2~3개월'
+      ],
+      today: '견적 유효기간(8/20) 내 발주사 회신·계약 여부 확인' },
+    { id: '13', title: 'Verichain–Jaian LART 전략적 협력계약 (Draft v3)', amount: null,
+      status: { label: '계약서 검토중', tone: 'warn' },
+      details: [
+        'LART 토큰 생태계 비즈니스 개발 및 리얼비즈니스 연계 프로젝트',
+        '한국측 파트너: PUNKVISM (법인명·등록번호·주소 확정 필요)',
+        'Verichain 역할: 커뮤니케이션·파트너 코디네이션·협상지원·비즈니스 개발 (이사: 최재율, 김동혁)',
+        'Jaian 역할: 프로젝트 스폰서 (전략·승인·펀딩·LART 재단 접근권한 제공)',
+        '수익배분: Net Project Revenue 기준 Jaian 82.5% / Verichain 17.5%',
+        'LART 토큰 추정가치: USD 1,000,000 (세팅)',
+        '정산: 매월 말 기준 10영업일 내 정산서 제공, 이후 10영업일 내 지급',
+        '계약기간: 1년, 자동 갱신 (해지 통보 30일 전)',
+        '관할/분쟁: 태국법 적용, 방콕 Thai Arbitration Institute 중재',
+        'Draft v3 상태 — Jaian 법인 정식명칭·등록번호·서명자 정보 미기재'
+      ],
+      today: '계약서 초안(v3) 검토 및 Jaian 법인정보·서명 확정 필요' }
+  ];
+
+  const root = document.getElementById('ledgerRoot');
+  const todayStr = new Date().toISOString().slice(0,10);
+  document.getElementById('todayDate').textContent = todayStr;
+
+  const totalKnown = projects.reduce((sum,p)=> sum + (p.amount||0), 0);
+  const totalUSD = projects.reduce((sum,p)=> sum + (p.amountUSD||0), 0);
+  document.getElementById('totalValue').textContent =
+    '₩ ' + totalKnown.toLocaleString('ko-KR');
+  if (totalUSD > 0) {
+    const usdEl = document.createElement('div');
+    usdEl.className = 'mono';
+    usdEl.style.fontSize = '13px';
+    usdEl.style.color = 'var(--ink-muted)';
+    usdEl.style.marginTop = '2px';
+    usdEl.textContent = '+ USD ' + totalUSD.toLocaleString('en-US') + ' (별도 통화)';
+    document.getElementById('totalValue').after(usdEl);
+  }
+
+  function fmtAmount(p){
+    if (p.amountUSD) return 'USD ' + p.amountUSD.toLocaleString('en-US');
+    if (p.amount == null) return '금액 미확정';
+    return '₩ ' + p.amount.toLocaleString('ko-KR');
+  }
+
+  let checks = {};
+  let memos = {};
+
+  async function loadState(){
+    try {
+      const r = await storage.get('checks:' + todayStr, true);
+      checks = r ? JSON.parse(r.value) : {};
+    } catch(e) { checks = {}; }
+    try {
+      const r = await storage.get('memos', true);
+      memos = r ? JSON.parse(r.value) : {};
+    } catch(e) { memos = {}; }
+  }
+
+  async function saveChecks(){
+    try { await storage.set('checks:' + todayStr, JSON.stringify(checks), true); }
+    catch(e) { console.error('save checks failed', e); }
+  }
+
+  let memoTimers = {};
+  async function doSaveMemo(id){
+    const flag = document.querySelector('.saved-flag[data-id="'+id+'"]');
+    if (flag) flag.textContent = '저장 중...';
+    try {
+      await storage.set('memos', JSON.stringify(memos), true);
+      if (flag) { flag.textContent = '✓ 저장됨'; setTimeout(()=>{ if(flag) flag.textContent=''; }, 2000); }
+    } catch(e) {
+      console.error('save memo failed', e);
+      if (flag) { flag.textContent = '저장 실패 — 다시 시도해주세요'; }
+    }
+  }
+  function saveMemo(id, val, immediate){
+    memos[id] = val;
+    clearTimeout(memoTimers[id]);
+    if (immediate) {
+      doSaveMemo(id);
+    } else {
+      memoTimers[id] = setTimeout(() => doSaveMemo(id), 600);
+    }
+  }
+
+  function renderToday(){
+    const list = document.getElementById('todayList');
+    const items = projects.filter(p => p.today);
+    document.getElementById('todayCount').textContent = items.length;
+    if (!items.length) {
+      list.innerHTML = '<div class="today-empty">오늘 확인할 항목이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = items.map(p => {
+      const done = !!checks[p.id];
+      return '<div class="today-item ' + (done ? 'done' : '') + '">' +
+        '<input type="checkbox" id="chk-' + p.id + '" ' + (done ? 'checked' : '') + '>' +
+        '<label for="chk-' + p.id + '"><span class="tag">#' + p.id + '</span>' + p.today + '</label>' +
+        '</div>';
+    }).join('');
+
+    items.forEach(p => {
+      const el = document.getElementById('chk-' + p.id);
+      el.addEventListener('change', (e) => {
+        checks[p.id] = e.target.checked;
+        saveChecks();
+        renderToday();
+      });
+    });
+  }
+
+  function renderCards(){
+    const list = document.getElementById('cardList');
+    list.innerHTML = projects.map(p => {
+      const memoVal = memos[p.id] || '';
+      return '<div class="card">' +
+        '<div class="card-top">' +
+          '<div>' +
+            '<span class="card-id">#' + p.id + '</span>' +
+            '<span class="card-title">' + p.title + '</span><br/>' +
+            '<span class="seal ' + p.status.tone + '">' + p.status.label + '</span>' +
+          '</div>' +
+          '<div class="card-amount">' + fmtAmount(p) + '</div>' +
+        '</div>' +
+        '<ul class="card-details">' + p.details.map(d => '<li>' + d + '</li>').join('') + '</ul>' +
+        '<div class="card-memo">' +
+          '<textarea placeholder="메모 추가 (파트너와 공유됨)" data-id="' + p.id + '">' + memoVal + '</textarea>' +
+          '<div class="memo-row">' +
+            '<button class="memo-update-btn" data-id="' + p.id + '">업데이트</button>' +
+            '<div class="saved-flag" data-id="' + p.id + '"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    list.querySelectorAll('textarea').forEach(t => {
+      t.addEventListener('input', (e) => saveMemo(e.target.dataset.id, e.target.value));
+    });
+    list.querySelectorAll('.memo-update-btn').forEach(b => {
+      b.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        const ta = list.querySelector('textarea[data-id="' + id + '"]');
+        saveMemo(id, ta.value, true);
+      });
+    });
+  }
+
+  loadState().then(() => {
+    renderToday();
+    renderCards();
+  });
+  }
+  initLedger();
+})();
+</script>
+</body>
+</html>
